@@ -4,6 +4,37 @@
 
 * 1. What's this?
 
+  *p4.el* is a tool to help manage p4 client using Emacs.
+
+
+
+** Functions
+
+   * p4-cbg : Create changes list and check out files based on a commit of git.
+   * p4-cleanup-cls
+   * p4-co
+   * p4-manager
+   * p4-sync-all
+   * p4-ediff
+   * p4-sync-item
+
 * 2. Install
 
+  Just copy p4.el into *load-path* of emacs.
+
 * 3. Usage
+
+  Some variables should be initialized before using p4.el:
+
+#+BEGIN_SRC emacs-lisp
+  (require 'p4)
+  (setq p4user "user_name")
+  (setq p4passwd "password")
+  (setq p4client "client_name")
+  (setq p4host "client_host_name")
+  (setq p4port "server:port")
+
+  (setq p4-r-match-branch-name (rx "/client" (+? ascii) (or "/main" (: "feature_" (= 6 digit)))))
+  (p4-init-variables)
+
+#+END_SRC

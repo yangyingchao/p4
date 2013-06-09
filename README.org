@@ -11,12 +11,19 @@
 ** Functions
 
    * p4-cbg : Create changes list and check out files based on a commit of git.
+
    * p4-cleanup-cls
+
    * p4-co
+
    * p4-manager
+
    * p4-sync-all
+
    * p4-ediff
+
    * p4-sync-item
+
 
 * 2. Install
 

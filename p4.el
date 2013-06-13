@@ -1139,10 +1139,9 @@ static char *abc[] = {
               (with-current-buffer (get-buffer-create "*P4-Progress*")
                 (goto-char (point-max))
                 (when p4-confilict-detected
-                  (insert "\nAuto resolving conflicts...\n%s\n"
-                          (p4-command-output-to-string "p4" "resolve" "-am"))
-                  (p4-revert-cl (p4-get-changeList))
-                  (p4-cleanup-cls))
+                  (insert (format "\nAuto resolving conflicts...\n%s\n"
+                                  (p4-command-output-to-string "p4" "resolve" "-am")))
+                  (p4-revert-cl (p4-get-changeList)))
                 (insert (format
 "\n************************************************************************
 ** All commands have been processed at : %s **\n************************************************************************\n"

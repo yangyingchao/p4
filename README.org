@@ -12,7 +12,7 @@
 
    * p4-cbg : Create changes list and check out files based on a commit of git.
 
-   * p4-cleanup-cls
+   * p4-cleanup-cls: Clean up all changes list, empty changes lists will be deleted.
 
    * p4-co
 

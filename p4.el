@@ -1141,7 +1141,8 @@ static char *abc[] = {
                 (when p4-confilict-detected
                   (insert (format "\nAuto resolving conflicts...\n%s\n"
                                   (p4-command-output-to-string "p4" "resolve" "-am")))
-                  (p4-revert-cl (p4-get-changeList)))
+                  (p4-revert-cl (p4-get-changeList))
+                  (setq p4-confilict-detected nil))
                 (insert (format
 "\n************************************************************************
 ** All commands have been processed at : %s **\n************************************************************************\n"
@@ -1645,7 +1646,8 @@ Maybe you need to tweak p4-max-search-depth p4-r-match-branch-name"
   (setq p4-cmd-executing nil
         p4-pending-cmds nil
         p4-cmd-counter 0
-        p4-error-counter 0)
+        p4-error-counter 0
+        p4-confilict-detected nil)
   (clrhash p4-changeList-table)
   (with-current-buffer (get-buffer-create "*P4-Progress*")
     (erase-buffer)))

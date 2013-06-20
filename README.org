@@ -18,7 +18,7 @@
 
    * p4-manager
 
-   * p4-sync-all
+   * p4-sync-all : Sync all branches that matches p4-r-match-branch-name.
 
    * p4-ediff
 

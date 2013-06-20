@@ -81,7 +81,12 @@
   "Prefix of p4-command.")
 
 (defcustom p4-r-match-branch-name nil
-  "Regular expression which should be provided by user.
+  "Regular expression which should be provided by user to match a branch name.
+Example: (rx (or \"main\" (: \"feature_\" (= 6 digit))))"
+  :group 'p4)
+
+(defcustom p4-r-exclude-branch-name nil
+  "Regular expression which should be provided by user to exclude a branch name.
 Example: (rx (or \"main\" (: \"feature_\" (= 6 digit))))"
   :group 'p4)
 
@@ -1328,7 +1333,9 @@ If reverAll is not provided, only revert files that are not changed."
       (when (and (file-directory-p dir)
                  (not (string-match ".*\.git.*"  dir)))
         (if (string-match regular-exp dir)
-            (setq result (cons dir result))
+            (when (or (not p4-r-exclude-branch-name)
+                      (not (string-match p4-r-exclude-branch-name dir)))
+              (setq result (cons dir result)))
           (if (string-match p4-r-match-max-depth dir)
               nil
             (let ((tmp (p4-branch-iter dir rex exclude)))

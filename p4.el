@@ -1131,6 +1131,7 @@ static char *abc[] = {
                        (file-exists-p local-file))
                 (rename-file local-file (make-temp-name local-file)))
               (p4-call-command-sync "sync" (concat remote-file "#head"))
+              (pop p4-pending-cmds)
               (p4-resume-processing))
           (with-current-buffer (get-buffer-create  "*P4-Progress*")
             (setq p4-last-output "")
@@ -1926,6 +1927,8 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
         pos)
     (with-current-buffer manager
       (setq buffer-read-only nil)
+
+      ;; Insert pending change lists.
       (dolist (cl cls)
         (setq pos (point))
         (p4-insert-mark (p4-get-mark-fold "red"))

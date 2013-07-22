@@ -1040,10 +1040,12 @@ static char *abc[] = {
     (if (listp paths)
         (dolist (path paths)
           (setq outpaths (cons (p4-make-depot-path path) outpaths)))
-      (setq outpaths (let ((shortpath (get-short-path paths)))
-                       (yc/strip-string (if shortpath
-                                            (concat "//depot" (p4-normalize-path shortpath))
-                                          paths)))))
+      (setq outpaths (if (string-match (rx bol "//depot/") paths)
+                         paths
+                       (let ((shortpath (get-short-path paths)))
+                         (yc/strip-string (if shortpath
+                                              (concat "//depot" (p4-normalize-path shortpath))
+                                            paths))))))
     outpaths))
 
 
@@ -1528,11 +1530,14 @@ If reverAll is not provided, only revert files that are not changed."
       (error "No file/directory provided!"))))
 
 
-(defun p4-sync-multiple (files)
+(defun p4-sync-multiple (files &optional force)
   "Sync multiple items"
   (if (not (listp files))
       (error "p4-sync-multiple requires a list of files!")
-    (add-to-list 'p4-pending-cmds (append (list "sync")  (p4-make-depot-path files)) t)
+    (add-to-list 'p4-pending-cmds (append (list "sync")
+                                          (append (if force
+                                                      (list "-f" ) nil)
+                                                  (p4-make-depot-path files))) t)
     (display-buffer (get-buffer-create "*P4-Progress*"))
     (p4-trigger-commands)))
 
@@ -1854,6 +1859,24 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
   "Debug function used to reload this elisp."
   (interactive)
   (load-file "~/.emacs.d/site-lisp/version-control/p4/p4.el"))
+
+(defun p4-get-files-in-dir (path &optional regex)
+  "Get files in specified directory"
+  (let* ((path (p4-make-depot-path path))
+         (regex (if regex regex "*"))
+         (r-match-entry (rx bol (group "//" (+? ascii)) "#" (+ digit) (+ whitespace) "-"))
+         result
+         files)
+    (when (p4-file-directory-p path)
+      (setq path (if (= (elt path (1- (length path))) ?/)
+                     (concat path regex)
+                   (format "%s/%s" path regex)))
+      (mapc (lambda (x)
+              (when (string-match r-match-entry x)
+                (setq files (cons (match-string 1 x) files)))
+              )
+            (split-string (p4-command-output-to-string "p4" "files" path) "\n")))
+    files))
 
  ;; P4 Manager
 (defconst p4-manager-buffer-name "*P4-Manager*" "Name of p4 manager." )

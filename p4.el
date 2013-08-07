@@ -97,6 +97,9 @@ Example: (rx (or \"main\" (: \"feature_\" (= 6 digit))))"
 (defvar p4-root nil
   "Host of p4 client.")
 
+(defvar p4-current-client nil
+  "current client,  set to nil to make it change automatically with current directory")
+
 ;; TODO: Hide following consts using (let ...)
 (defconst p4-r-match-client-name
   (rx "Client name:" (* blank) (group (+ nonl)))
@@ -118,6 +121,7 @@ Example: (rx (or \"main\" (: \"feature_\" (= 6 digit))))"
 (defvar p4-r-match-max-depth nil "nil")
 (defvar p4-cmd-starttime 0 "Start timestamp of a command")
 (defvar p4-logged-in nil "Status flag of whether user logged in.")
+(defvar p4-client-lists nil "List of clients available for this host")
 
 (defvar p4-running-emacs nil
   "If the current Emacs is not XEmacs, then, this is non-nil.")
@@ -275,14 +279,15 @@ for saved window configurations."
     newpath))
 
 (defmacro defp4cmd (fkn &rest all-args)
+  ;; '(p4-guess-workspace default-directory)
   (let ((args (car all-args))
-	(help-cmd (cadr all-args))
-	(help-txt (eval (cadr (cdr all-args))))
-	(body (cdr (cddr all-args))))
+        (help-cmd (cadr all-args))
+        (help-txt (eval (cadr (cdr all-args))))
+        (body (cdr (cddr all-args))))
     `(defalias ',fkn
        ,(append (list 'lambda args
-		      (p4-help-text help-cmd help-txt))
-		body))))
+                      (p4-help-text help-cmd help-txt))
+                body))))
 
 (defun p4-make-output-buffer (buffer-name &optional mode &optional initString)
   "Make read only buffer and return the buffer."
@@ -996,18 +1001,28 @@ static char *abc[] = {
 (defun p4-init-variables ( )
   "Initialize user customized variables."
   (if (or (not p4user)
-          (not p4client)
+          ;; (not p4client)
           (not p4passwd)
           (and (not p4port)
                (not p4name))) ;; todo: should provide a way to input passwd interactively.
       (error "User, Password, Client and host(or port) must be set! Customize them first."))
 
   (setenv "P4USER" p4user)
-  (setenv "P4CLIENT" p4client)
   (setenv "P4PASSWD" p4passwd)
+
   (if p4host
       (setenv "P4HOST" p4host)
     )
+
+  (if p4client
+      (progn
+        (setenv "P4CLIENT" p4client)
+        (setq p4-current-client p4client))
+
+    (setq p4-client-lists (p4-list-clients))
+    (setq p4-current-client nil)
+    (setenv "P4CLIENT" ""))
+
   (if p4port
       (setenv "P4PORT" p4port)
     )
@@ -1505,6 +1520,43 @@ If reverAll is not provided, only revert files that are not changed."
                  (setq git-commit "CHANGED"))))
     git-commit))
 
+
+(defun p4-list-clients ()
+  "Get a list of clients"
+  (let* ((out-string (if p4user (p4-command-output-to-string "p4" "clients" "-u" p4user )
+                       nil))
+         (r-match-client (rx "Client"
+                             (+ space) (group (+? nonl))
+                             (+ space) (= 4 digit) (= 2 (: "/" (= 2 digit)))
+                             (+ space) "root"
+                             (+ space) (group (+? nonl))
+                             (+ space) "'" (+? nonl) "'" eol))
+         res name path)
+    (defun client-list-iter (pos)
+      "Iter to find all lists."
+      (when (and (string-match r-match-client out-string pos)
+                 (setq name (match-string 1 out-string)
+                       path (match-string 2 out-string)))
+        (if (file-directory-p path)
+            (setq res (cons (cons name path) res)))
+        (client-list-iter (1+ (match-end 0)))))
+    (client-list-iter 0)
+    res))
+
+
+(defun p4-guess-workspace (&optional fn &optional uproot)
+  "Guess current workspace and set it to env"
+  (if (not fn)
+      (setq fn default-directory))
+  (when (not p4-current-client)
+    (dolist (pair p4-client-lists)
+      (if (string-prefix-p (cdr pair) fn)
+          (setenv "P4CLIENT" (car pair))
+          (if uproot
+              (let ((p4info (command-output-to-string "p4"  "info")))
+                (if (string-match p4-r-match-client-root p4info)
+                    (setq p4-root (p4-normalize-path (match-string 1 p4info)))
+                  )))))))
 
 
 
@@ -1566,6 +1618,7 @@ Maybe you need to tweak p4-max-search-depth or regular expression "
 (defun p4-cbg ( )
   "Checkout files based on git commit."
   (interactive)
+  (p4-guess-workspace default-directory t)
   (let ((commit (p4-get-git-commit))
         (parse-result nil))
     (if (not commit)
@@ -1660,7 +1713,8 @@ Maybe you need to tweak p4-max-search-depth p4-r-match-branch-name"
         p4-pending-cmds nil
         p4-cmd-counter 0
         p4-error-counter 0
-        p4-confilict-detected nil)
+        p4-confilict-detected nil
+        p4-client-lists (p4-list-clients))
   (clrhash p4-changeList-table)
   (with-current-buffer (get-buffer-create "*P4-Progress*")
     (erase-buffer)))
@@ -1684,6 +1738,7 @@ Argument ARG command for which help is needed."
   "To view a history of the change made to the current file, type \\[p4-log].\n"
   (interactive)
   (let ((file-name (p4-buffer-file-name-2)))
+    (p4-guess-workspace file-name)
     (if (or current-prefix-arg (not file-name))
 	(setq file-name (p4-make-list-from-string
 			 (p4-read-arg-string "p4 filelog: " file-name)))
@@ -1810,7 +1865,7 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
 (defp4cmd p4-have (&rest args)
   "have" "To list revisions last gotten, type \\[p4-have].\n"
   (interactive (p4-read-args* "p4 have: " nil (p4-buffer-file-name-2)))
-  (p4-call-command "have" args (concat "*P4 Have: (" (p4-current-client) ") " (car args) "*")
+  (p4-call-command "have" args (concat "*P4 Have: (" (p4-get-current-client) ") " (car args) "*")
 		   'p4-basic-list-mode))
 
 ;; The p4 changes command
@@ -3259,12 +3314,12 @@ character events"
 ;;   (p4-opened-internal args))
 
 (defun p4-opened-internal (args)
-  (let ((p4-client (p4-current-client)))
+  (let ((p4-client (p4-get-current-client)))
     (p4-call-command "opened" args (concat "*Opened Files: " p4-client "*")
              'p4-basic-list-mode)))
 
 (defun p4-update-opened-list ()
-  ;; (when (get-buffer-window (concat "*Opened Files: " (p4-current-client) "*"))
+  ;; (when (get-buffer-window (concat "*Opened Files: " (p4-get-current-client) "*"))
   ;;   (p4-opened-internal nil))
   )
 
@@ -4098,7 +4153,7 @@ type \\[p4-get-client-name].
 This will be the current client that is in use for access through
 Emacs P4."
   (interactive)
-  (let ((client (p4-current-client)))
+  (let ((client (p4-get-current-client)))
     (message "P4CLIENT [local: %s], [global: %s]" client (getenv "P4CLIENT"))
     client))
 
@@ -4116,7 +4171,7 @@ Emacs P4."
     (kill-buffer output-buffer)
     data))
 
-(defun p4-current-client ()
+(defun p4-get-current-client ()
   "Get the current local client, or the global client, if that."
   (let ((p4-config-file (p4-find-p4-config-file))
     cur-client pmin)

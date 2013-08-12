@@ -1575,6 +1575,7 @@ If reverAll is not provided, only revert files that are not changed."
 (defun p4-sync-item ()
   "Sync item"
   (interactive)
+  (p4-guess-workspace)
   (let ((item (p4-get-current-item)))
     (if item
         (progn

@@ -1544,19 +1544,27 @@ If reverAll is not provided, only revert files that are not changed."
     res))
 
 
-(defun p4-guess-workspace (&optional fn &optional uproot)
+(defun p4-guess-workspace (&optional fn)
   "Guess current workspace and set it to env"
-  (if (not fn)
-      (setq fn default-directory))
-  (when (not p4-current-client)
-    (dolist (pair p4-client-lists)
-      (if (string-prefix-p (cdr pair) fn)
-          (setenv "P4CLIENT" (car pair))
-          (if uproot
-              (let ((p4info (command-output-to-string "p4"  "info")))
-                (if (string-match p4-r-match-client-root p4info)
-                    (setq p4-root (p4-normalize-path (match-string 1 p4info)))
-                  )))))))
+  (let ((dirname (if fn fn default-directory))
+        t-p4client t-p4-root )
+    (when (not p4-current-client)
+      (catch 'fin
+        (dolist (pair p4-client-lists)
+          (when (string-prefix-p (cdr pair) dirname)
+            (setq t-p4client (car pair))
+            (setenv "P4CLIENT" t-p4client)
+            (let ((p4info (command-output-to-string "p4"  "info")))
+              (if (string-match p4-r-match-client-root p4info)
+                  (setq t-p4-root (p4-normalize-path (match-string 1 p4info)))))
+            (throw 'fin "finished.")))))
+    ;; Final check
+    (if (or (not t-p4client) (not t-p4-root))
+        (error "Failed to guess workspace for path: %s.
+Is this directory under control of p4 ?" dirname)
+      (setq p4client t-p4client
+            p4-root t-p4-root))
+    (setenv "P4CLIENT" p4client)))
 
 
 
@@ -1579,7 +1587,7 @@ If reverAll is not provided, only revert files that are not changed."
   (let ((item (p4-get-current-item)))
     (if item
         (progn
-          (p4-sync-single-item item "head" ))
+          (p4-sync-single-item item "head" t))
       (error "No file/directory provided!"))))
 
 
@@ -1619,7 +1627,7 @@ Maybe you need to tweak p4-max-search-depth or regular expression "
 (defun p4-cbg ( )
   "Checkout files based on git commit."
   (interactive)
-  (p4-guess-workspace default-directory t)
+  (p4-guess-workspace default-directory)
   (let ((commit (p4-get-git-commit))
         (parse-result nil))
     (if (not commit)
@@ -1659,6 +1667,7 @@ Maybe you need to tweak p4-max-search-depth or regular expression "
 (defun p4-sync-all ()
   "Sync all items"
   (interactive)
+  (p4-guess-workspace)
   (if (or (not p4-root)
          (not p4-r-match-branch-name))
       (error "No root or branch name provided."))
@@ -1898,6 +1907,7 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
 (defun p4-cleanup-cls ()
   "Clean up empty change lists."
   (interactive)
+  (p4-guess-workspace)
   (let ((cls (p4-get-pending-cls))
         ccls)
     (when cls
@@ -2002,6 +2012,7 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
 (defun p4-manager ()
   "Open a P4 Manager to operate change list visually."
   (interactive)
+  (p4-guess-workspace)
   (let ((manager (p4-get-manager-buffer))
         (cls (p4-get-pending-cls))
         pos)

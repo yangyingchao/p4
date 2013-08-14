@@ -1669,12 +1669,11 @@ Maybe you need to tweak p4-max-search-depth or regular expression "
   (interactive)
   (p4-guess-workspace)
   (if (or (not p4-root)
-         (not p4-r-match-branch-name))
+          (not p4-r-match-branch-name))
       (error "No root or branch name provided."))
   (let ((result (p4-branch-iter p4-root p4-r-match-branch-name)))
     (if result
-        (dolist (item result)
-          (p4-sync-single-item item))
+        (mapc 'p4-sync-single-item result)
       (error (format "No branch found in %s, using depth: %d, reg: %s.
 Maybe you need to tweak p4-max-search-depth p4-r-match-branch-name"
                      p4-root p4-max-search-depth p4-r-match-branch-name)))))

@@ -1452,7 +1452,7 @@ If reverAll is not provided, only revert files that are not changed."
 (defun p4-get-changeList (&optional description)
   "Create and return a new change list."
   (if (not description)
-      (setq description (format "<Saved by Perforce at %s>" (format-time-string "%Y-%m-%d")))
+      (setq description (format "<Saved by P4.el at %s>" (format-time-string "%Y-%m-%d")))
     (if (not (stringp description))
         (error "Description should be a string or nil")))
   (let ((cl (gethash description p4-changeList-table))

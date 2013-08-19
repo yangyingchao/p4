@@ -1546,6 +1546,7 @@ If reverAll is not provided, only revert files that are not changed."
 
 (defun p4-guess-workspace (&optional fn)
   "Guess current workspace and set it to env"
+  (interactive)
   (let ((dirname (if fn fn default-directory))
         t-p4client t-p4-root )
     (when (not p4-current-client)
@@ -1943,6 +1944,15 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
             (split-string (p4-command-output-to-string "p4" "files" path) "\n")))
     files))
 
+
+(defun p4-delete-workspace (&optional ws)
+  "Delete workspace"
+  (interactive)
+  (p4-guess-workspace)
+  (if p4client
+      (p4-call-command-sync "client" "-d" p4client))
+  (error "Client not specified!")
+  )
  ;; P4 Manager
 (defconst p4-manager-buffer-name "*P4-Manager*" "Name of p4 manager." )
 (defconst p4-manager-prefix-user   "User  :")

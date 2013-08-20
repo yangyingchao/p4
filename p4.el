@@ -134,10 +134,6 @@ Example: (rx (or \"main\" (: \"feature_\" (= 6 digit))))"
 (defvar p4-window-config-stack nil
   "Stack of saved window configurations.")
 
-(defvar p4-cl-template nil
-  "Template used to create change list.
-This variable get set when p4-get-changeList is first called.")
-
 (defvar p4-last-output "" "Last output string.")
 (defvar p4-error-counter 0 "Error counter.")
 
@@ -1202,8 +1198,7 @@ static char *abc[] = {
               (setq need-stop nil
                     p4-confilict-detected t))
             (when (string-match p4-r-match-unknown-cl p4-last-output);;unknown cl, clear hash table
-              (remhash (concat "Auto created by p4.el on: "
-                               (format-time-string "%Y-%m-%d")) p4-changeList-table)
+              (remhash (p4-get-cl-description) p4-changeList-table)
               (setq need-stop nil))
             (when (string-match (rx (or "- must resolve" " - is opened for edit")) p4-last-output) ;; Just forget about it!
               (setq need-stop nil))
@@ -1448,44 +1443,48 @@ If reverAll is not provided, only revert files that are not changed."
 	(t
 	 rev)))
 
+(defun p4-get-cl-description ()
+  "Get description of cl based on current date and branch name"
+  (format "Auto created by p4.el at: %s on branch: %s"
+          (format-time-string "%Y-%m-%d")
+          (if p4client p4client "Unknown")))
 
 (defun p4-get-changeList (&optional description)
   "Create and return a new change list."
   (if (not description)
-      (setq description (format "<Saved by P4.el at %s>" (format-time-string "%Y-%m-%d")))
+      (setq description (p4-get-cl-description))
     (if (not (stringp description))
         (error "Description should be a string or nil")))
-  (let ((cl (gethash description p4-changeList-table))
-        (modified-desc description)
-        p4template p4-result)
+  (let ((cl (gethash description p4-changeList-table)))
     (when (not cl)
-      (if (not p4-cl-template)
-          (setq p4-cl-template (command-output-to-string "p4" "change" "-o")))
-      (setq p4template p4-cl-template)
-      (with-current-buffer (get-buffer-create "P4 New Change")
-        (erase-buffer)
-        (insert description)
-        (goto-char (point-min))
-        (while (search-forward-regexp "^" nil t)
-          (replace-match "    "))
-        (delete-trailing-whitespace)
-        (setq modified-desc (buffer-string))
-        (erase-buffer)
+      (let ((p4template (command-output-to-string "p4" "change" "-o"))
+            (modified-desc description)
+            p4-result)
 
-        (when (and modified-desc
-                   (string-match (rx (group (+ anything)  "Description:"))  p4template))
-          (setq p4template (concat (match-string 1 p4template)
-                                   "\n" modified-desc)))
-        (insert p4template)
+        (with-current-buffer (get-buffer-create "P4 New Change")
+          (erase-buffer)
+          (insert description)
+          (goto-char (point-min))
+          (while (search-forward-regexp "^" nil t)
+            (replace-match "    "))
+          (delete-trailing-whitespace)
+          (setq modified-desc (buffer-string))
+          (erase-buffer)
 
-        (setq p4-result (with-output-to-string
-                          (call-process-region (point-min)
-                                               (point-max) "p4"
-                                               nil standard-output
-                                               nil "change" "-i")))
-        (when (string-match (rx (group (+ digit))) p4-result)
-          (setq cl (match-string 1 p4-result))
-          (puthash description cl p4-changeList-table))))
+          (when (and modified-desc
+                     (string-match (rx (group (+ anything)  "Description:"))  p4template))
+            (setq p4template (concat (match-string 1 p4template)
+                                     "\n" modified-desc)))
+          (insert p4template)
+
+          (setq p4-result (with-output-to-string
+                            (call-process-region (point-min)
+                                                 (point-max) "p4"
+                                                 nil standard-output
+                                                 nil "change" "-i")))
+          (when (string-match (rx (group (+ digit))) p4-result)
+            (setq cl (match-string 1 p4-result))
+            (puthash description cl p4-changeList-table)))))
     cl))
 
 

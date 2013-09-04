@@ -1546,7 +1546,7 @@ If reverAll is not provided, only revert files that are not changed."
 (defun p4-guess-workspace (&optional fn)
   "Guess current workspace and set it to env"
   (interactive)
-  (let ((dirname (if fn fn default-directory))
+  (let ((dirname (expand-file-name (if fn fn default-directory)))
         t-p4client t-p4-root )
     (when (not p4-current-client)
       (catch 'fin
@@ -1739,6 +1739,7 @@ Argument ARG command for which help is needed."
 (defp4cmd p4-info ()
   "info" "To print out client/server information, type \\[p4-info].\n"
   (interactive)
+  (p4-guess-workspace)
   (p4-call-command "info" nil "*P4 info*"))
 
 ;; The p4 filelog command

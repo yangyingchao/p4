@@ -1546,7 +1546,7 @@ If reverAll is not provided, only revert files that are not changed."
 (defun p4-guess-workspace (&optional fn)
   "Guess current workspace and set it to env"
   (interactive)
-  (let ((dirname (expand-file-name (if fn fn default-directory)))
+  (let ((dirname (file-truename (expand-file-name (if fn fn default-directory))))
         t-p4client t-p4-root )
     (when (not p4-current-client)
       (catch 'fin
@@ -1667,16 +1667,19 @@ Maybe you need to tweak p4-max-search-depth or regular expression "
 (defun p4-sync-all ()
   "Sync all items"
   (interactive)
-  (p4-guess-workspace)
-  (if (or (not p4-root)
-          (not p4-r-match-branch-name))
-      (error "No root or branch name provided."))
-  (let ((result (p4-branch-iter p4-root p4-r-match-branch-name)))
-    (if result
-        (mapc 'p4-sync-single-item result)
-      (error (format "No branch found in %s, using depth: %d, reg: %s.
+  (if p4-current-client
+      (let ((result (p4-branch-iter p4-root p4-r-match-branch-name)))
+        (if (or (not p4-root)
+                (not p4-r-match-branch-name))
+            (error "No root or branch name provided."))
+        (if result
+            (mapc 'p4-sync-single-item result)
+          (error (format "No branch found in %s, using depth: %d, reg: %s.
 Maybe you need to tweak p4-max-search-depth p4-r-match-branch-name"
-                     p4-root p4-max-search-depth p4-r-match-branch-name)))))
+                         p4-root p4-max-search-depth p4-r-match-branch-name))))
+
+    (p4-guess-workspace)
+    (p4-sync-single-item "//depot/...")))
 
 
 (defun p4-resume-processing ()

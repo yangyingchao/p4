@@ -266,13 +266,15 @@ for saved window configurations."
 
 (defun p4-denormalize-path (path)
   "DeNormalize path, replace '/' with '\\' if on windows"
-  (let ((newpath path))
+  (let ((fmt-func 'identity)
+        (newpath path))
     (when (and path
                (or (string= system-type "windows-nt")
                    (string= system-type "ms-dos")))
+      (setq fmt-func 'downcase)
       (let ((subpath (split-string path "/")))
         (setq newpath (p4-concat-string-array subpath "\\"))))
-    newpath))
+    (funcall fmt-func newpath)))
 
 (defmacro defp4cmd (fkn &rest all-args)
   ;; '(p4-guess-workspace default-directory)
@@ -1536,6 +1538,9 @@ If reverAll is not provided, only revert files that are not changed."
       (when (and (string-match r-match-client out-string pos)
                  (setq name (match-string 1 out-string)
                        path (match-string 2 out-string)))
+        (if (or (string= system-type "windows-nt")
+                (string= system-type "ms-dos"))
+            (setq path (downcase path))) ;; convert to lower case if on case-insensitive systems.
         (if (file-directory-p path)
             (setq res (cons (cons name path) res)))
         (client-list-iter (1+ (match-end 0)))))
@@ -1546,7 +1551,8 @@ If reverAll is not provided, only revert files that are not changed."
 (defun p4-guess-workspace (&optional fn)
   "Guess current workspace and set it to env"
   (interactive)
-  (let ((dirname (file-truename (expand-file-name (if fn fn default-directory))))
+  (let ((dirname (p4-denormalize-path
+                  (file-truename (expand-file-name (if fn fn default-directory)))))
         t-p4client t-p4-root )
     (when (not p4-current-client)
       (catch 'fin
@@ -1573,6 +1579,7 @@ Is this directory under control of p4 ?" dirname)
 (defun p4-co ()
   "Checkout current file."
   (interactive)
+  (p4-guess-workspace)
   (let ((item (p4-get-current-item)))
     (if item
         (p4-co-single-item item)

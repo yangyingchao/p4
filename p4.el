@@ -996,6 +996,7 @@ static char *abc[] = {
         t
       nil)))
 
+;;;###autoload
 (defun p4-init-variables ( )
   "Initialize user customized variables."
   (if (or (not p4user)
@@ -1532,18 +1533,20 @@ If reverAll is not provided, only revert files that are not changed."
                              (+ space) "root"
                              (+ space) (group (+? nonl))
                              (+ space) "'" (+? nonl) "'" eol))
-         res name path)
+         res name path epos)
     (defun client-list-iter (pos)
       "Iter to find all lists."
       (when (and (string-match r-match-client out-string pos)
                  (setq name (match-string 1 out-string)
-                       path (match-string 2 out-string)))
+                       path (match-string 2 out-string)
+                       epos (match-end 0) ))
         (if (or (string= system-type "windows-nt")
                 (string= system-type "ms-dos"))
             (setq path (downcase path))) ;; convert to lower case if on case-insensitive systems.
-        (if (file-directory-p path)
+        (if (and (file-name-absolute-p path)
+                 (file-directory-p path))
             (setq res (cons (cons name path) res)))
-        (client-list-iter (1+ (match-end 0)))))
+        (client-list-iter (1+ epos))))
     (client-list-iter 0)
     res))
 

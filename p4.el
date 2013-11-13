@@ -2029,6 +2029,7 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
       (p4-manager-mode))
     manager))
 
+;;;###autoload
 (defun p4-manager ()
   "Open a P4 Manager to operate change list visually."
   (interactive)

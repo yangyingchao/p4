@@ -994,10 +994,8 @@ static char *abc[] = {
         t
       nil)))
 
-;;;###autoload
 (defun p4-init-variables ( )
   "Initialize user customized variables."
-  (interactive)
   (if (or (not p4user)
           ;; (not p4client)
           (not p4passwd)
@@ -1577,7 +1575,7 @@ Is this directory under control of p4 ?" dirname)
 
 
 ;; Exposed functions (can be called interactively)
-
+;;;###autoload
 (defun p4-co ()
   "Checkout current file."
   (interactive)
@@ -1587,8 +1585,10 @@ Is this directory under control of p4 ?" dirname)
         (p4-co-single-item item)
       (error "No file/directory provided!"))))
 
+;;;###autoload
 (defalias 'p4-edit 'p4-co)
 
+;;;###autoload
 (defun p4-sync-item ()
   "Sync item"
   (interactive)
@@ -1673,6 +1673,7 @@ Maybe you need to tweak p4-max-search-depth or regular expression "
 
 (defconst r-match-dirname (rx (+ (or alnum whitespace) )))
 
+;;;###autoload
 (defun p4-sync-all ()
   "Sync all items"
   (interactive)
@@ -1702,7 +1703,7 @@ Maybe you need to tweak p4-max-search-depth p4-r-match-branch-name"
 
 
 (defun p4-co-all ()
-  "Sync all items"
+  "Check out all items"
   (interactive)
   (if (or (not p4-root)
           (not p4-r-match-branch-name))
@@ -1715,11 +1716,11 @@ Maybe you need to tweak p4-max-search-depth p4-r-match-branch-name"
 Maybe you need to tweak p4-max-search-depth p4-r-match-branch-name"
                      p4-root p4-max-search-depth p4-r-match-branch-name)))))
 
+;;;###autoload
 (defp4cmd p4sync-all (&rest args)
   "sync-all" "To sync all branches with server"
   (interactive)
   (p4-sync-all))
-
 
 
 (defun p4-show-filelog ()
@@ -1755,6 +1756,7 @@ Argument ARG command for which help is needed."
   (p4-call-command "info" nil "*P4 info*"))
 
 ;; The p4 filelog command
+;;;###autoload
 (defp4cmd p4-log ()
   "filelog"
   "To view a history of the change made to the current file, type \\[p4-log].\n"

@@ -997,6 +997,7 @@ static char *abc[] = {
 ;;;###autoload
 (defun p4-init-variables ( )
   "Initialize user customized variables."
+  (interactive)
   (if (or (not p4user)
           ;; (not p4client)
           (not p4passwd)

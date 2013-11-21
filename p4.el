@@ -4294,29 +4294,27 @@ that."
 
 
 
+;; ;; Add some functions to key map.
+;; (eval-after-load "magit"
+;;   '(progn
+;;      (message "Loading configuration for magit")
+;;      '(progn
+;;         (lazy-set-key
+;;          (list
+;;           (cons "C" 'p4-cbg))
+;;          magit-reflog-mode-map
+;;          )
 
-;; Add some functions to key map.
-(eval-after-load "magit"
-  '(progn
-     (message "Loading configuration for magit")
-     '(progn
-        (lazy-set-key
-         (list
-          (cons "C" 'p4-cbg))
-         magit-reflog-mode-map
-         )
+;;         (lazy-set-key
+;;          (list
+;;           (cons "C" 'p4-cbg))
+;;          magit-log-mode-map
+;;          )
 
-        (lazy-set-key
-         (list
-          (cons "C" 'p4-cbg))
-         magit-log-mode-map
-         )
-
-        (lazy-set-key
-         (list
-          (cons "C" 'p4-cbg))
-         magit-status-mode-map))))
-
+;;         (lazy-set-key
+;;          (list
+;;           (cons "C" 'p4-cbg))
+;;          magit-status-mode-map))))
 
 (provide 'p4)
 ;;;;; p4.el ends here

@@ -41,6 +41,8 @@
 
  ;; Initiate of this package.
 
+(require 'ansi-color)
+
 (defgroup p4 nil
   "p4 interface for Emacs."
   :group 'tools)

@@ -1744,6 +1744,7 @@ Maybe you need to tweak p4-max-search-depth p4-r-match-branch-name"
     (erase-buffer)))
 
 ;; The p4 help command
+;;;###autoload
 (defp4cmd p4-help (&rest args)
   "help" "To print help message, type \\[p4-help].
 Argument ARG command for which help is needed."
@@ -1751,6 +1752,7 @@ Argument ARG command for which help is needed."
   (p4-call-command "help" args "*P4 help*"))
 
 ;; The p4 info command
+;;;###autoload
 (defp4cmd p4-info ()
   "info" "To print out client/server information, type \\[p4-info].\n"
   (interactive)

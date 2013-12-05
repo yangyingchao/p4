@@ -1634,7 +1634,7 @@ Maybe you need to tweak p4-max-search-depth or regular expression "
   "reg-expression to match a git comit."
   )
 
-
+;;;###autoload
 (defun p4-cbg ( )
   "Checkout files based on git commit."
   (interactive)

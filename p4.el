@@ -1552,7 +1552,6 @@ If reverAll is not provided, only revert files that are not changed."
 
 (defun p4-guess-workspace (&optional fn)
   "Guess current workspace and set it to env"
-  (interactive)
   (let ((dirname (p4-denormalize-path
                   (file-truename (expand-file-name (if fn fn default-directory)))))
         t-p4client t-p4-root )
@@ -1567,10 +1566,10 @@ If reverAll is not provided, only revert files that are not changed."
                   (setq t-p4-root (p4-normalize-path (match-string 1 p4info)))))
             (throw 'fin "finished.")))))
     ;; Final check
-    (if (or (not t-p4client) (not t-p4-root))
+    (if (and (not t-p4client) (not p4-current-client))
         (error "Failed to guess workspace for path: %s.
 Is this directory under control of p4 ?" dirname)
-      (setq p4client t-p4client
+      (setq p4client (or t-p4client p4-current-client)
             p4-root t-p4-root))
     (setenv "P4CLIENT" p4client)))
 

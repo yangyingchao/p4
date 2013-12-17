@@ -1772,6 +1772,14 @@ Argument ARG command for which help is needed."
       (setq file-name (list file-name)))
     (p4-file-change-log "filelog" file-name)))
 
+;;;###autoload
+(defp4cmd p4-logs ()
+  "filelogs"
+  "To view a history of the change made to list of files, type \\[p4-logs].\n"
+  (interactive)
+  (p4-guess-workspace default-directory)
+  (p4-file-change-log "filelog" (dired-map-over-marks (dired-get-filename) nil)))
+
 (defp4cmd p4-diff2 (version1 version2)
   "diff2" "Display diff of two depot files.
 

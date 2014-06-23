@@ -496,7 +496,8 @@ the last popped element to restore the window configuration."
 
 (defun p4-call-command-sync (&rest args)
   "Execute a command synchronously"
-  (apply 'call-process "p4" nil nil nil args))
+  (let ((res (apply 'call-process "p4" nil nil nil args)))
+    res))
 
 (defun p4-call-command-sync-ex (command &rest args)
   "Execute a command synchronously"
@@ -1555,7 +1556,8 @@ If reverAll is not provided, only revert files that are not changed."
   (let ((dirname (p4-denormalize-path
                   (file-truename (expand-file-name (if fn fn default-directory)))))
         t-p4client t-p4-root )
-    (when (not p4-current-client)
+    (when (or (not p4-current-client)
+              (not p4-root))
       (catch 'fin
         (dolist (pair p4-client-lists)
           (when (string-prefix-p (cdr pair) dirname)
@@ -1691,6 +1693,18 @@ Maybe you need to tweak p4-max-search-depth p4-r-match-branch-name"
 
     (p4-guess-workspace)
     (p4-sync-single-item "//depot/...")))
+
+(defun p4-manager-submit-cl ()
+  "Submit selected change list."
+  (interactive)
+  (p4-guess-workspace default-directory)
+  (let ((changeList (get-char-property (point) 'changeList)))
+    (if changeList
+        (if (p4-submit-cl changeList)
+            (p4-manager-refresh)
+          (error "Failed to submit change list: %s!" changeList))
+      (error "No change list found at position!")))
+  )
 
 
 (defun p4-resume-processing ()
@@ -1929,6 +1943,17 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
         t)
     nil))
 
+(defun p4-submit-cl (cl)
+  "Discard specified change list, it returns t if succeeded, or nil if failed."
+  (if (and (not (p4-is-cl-empty cl))
+           (= (p4-call-command-sync "submit" "-f" "submitunchanged"  "-c" cl) 0))
+      (let (index)
+        (maphash (lambda (key val) (if (string= cl val) (setq index key)))
+                 p4-changeList-table)
+        (if index (remhash index p4-changeList-table))
+        t)
+    nil))
+
 (defun p4-cleanup-cls ()
   "Clean up empty change lists."
   (interactive)
@@ -1991,7 +2016,8 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
     (define-key map (kbd "1") (lambda () (interactive) (p4-manager-show-all-change-lists t)))
     (define-key map (kbd "2") (lambda () (interactive) (p4-manager-show-all-change-lists nil)))
     (define-key map (kbd "g") 'p4-manager-refresh)
-    (define-key map (kbd "C") 'p4-cleanup-cls)
+    (define-key map (kbd "L") 'p4-cleanup-cls)
+    (define-key map (kbd "C") 'p4-manager-submit-cl)
     (define-key map (kbd "k") 'p4-manager-discard-cl)
     (define-key map (kbd "v") (lambda() (interactive) (p4-manager-revert-file)))
     (define-key map (kbd "U") (lambda() (interactive) (p4-manager-revert-file t)))

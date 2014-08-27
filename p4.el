@@ -1469,15 +1469,14 @@ If reverAll is not provided, only revert files that are not changed."
           (insert description)
           (goto-char (point-min))
           (while (search-forward-regexp "^" nil t)
-            (replace-match "    "))
+            (replace-match " "))
           (delete-trailing-whitespace)
           (setq modified-desc (buffer-string))
           (erase-buffer)
 
           (when (and modified-desc
                      (string-match (rx (group (+ anything)  "Description:"))  p4template))
-            (setq p4template (concat (match-string 1 p4template)
-                                     "\n" modified-desc)))
+            (setq p4template (concat (match-string 1 p4template) modified-desc)))
           (insert p4template)
 
           (setq p4-result (with-output-to-string

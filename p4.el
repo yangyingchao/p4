@@ -109,7 +109,8 @@ Example: (rx (or \"main\" (: \"feature_\" (= 6 digit))))"
   (rx "Client root:" (* blank) (group (+ nonl)))
   "Regular expression to match client root")
 
-(defconst p4-buffer (get-buffer-create "*P4-Progress*"))
+(defmacro p4-buffer ()
+  (get-buffer-create "*P4-Progress*"))
 
 (defvar p4-cmd-counter 0 "Counter of how many commands have been executed.")
 
@@ -496,12 +497,15 @@ the last popped element to restore the window configuration."
 
 (defun p4-call-command-sync (&rest args)
   "Execute a command synchronously"
-  (let ((res (apply 'call-process "p4" nil nil nil args)))
-    res))
-
-(defun p4-call-command-sync-ex (command &rest args)
-  "Execute a command synchronously"
-  (apply 'call-process command nil nil nil args))
+  (with-current-buffer (get-buffer-create  "*P4-Progress*")
+    (display-buffer (get-buffer-create "*P4-Progress*"))
+    (goto-char (point-max))
+    (insert (format "\n-------------Executing sync Task: (p4 %s) -------------\n"
+                    (p4-concat-string-array args " ")))
+    (goto-char (point-max))
+    (insert (p4-command-output-to-string "p4" args))
+    (insert "\n-------------Finished sync Task -------------\n"))
+  )
 
 (defun p4-call-command-async (&rest args)
   "Execute a p4 command.
@@ -529,7 +533,9 @@ args should be a list, but to make caller's life easier, it can accept one atom 
                         (apply #'process-file
                                cmd
                                nil (list t t) nil
-                               args)))))
+                               (if (listp (car args))
+                                   (car args)
+                                 args))))))
     (ansi-color-apply cmd-output)))
 
 (defalias 'command-output-to-string 'p4-command-output-to-string)

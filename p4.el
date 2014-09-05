@@ -1645,7 +1645,7 @@ Maybe you need to tweak p4-max-search-depth or regular expression "
   "Checkout files based on git commit."
   (interactive)
   (p4-guess-workspace default-directory)
-  (display-buffer (get-buffer-create p4-buffer))
+  (display-buffer (get-buffer-create "*P4-Progress*"))
   (let ((commit (p4-get-git-commit))
         (parse-result nil))
     (if (not commit)

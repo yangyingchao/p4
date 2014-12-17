@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; p4.el --- Simple description
 ;;
-;; Copyright (C) 2011-2013, Yang, Ying-chao
+;; Copyright (C) 2011-2014, Yang, Ying-chao
 ;;
 ;; Author:        Yang, Ying-chao <yangyingchao@gmail.com>
 ;;
@@ -51,27 +51,27 @@
   "psvn faces."
   :group 'p4)
 
-(defcustom p4user nil
+(defcustom p4-user nil
   "Username."
    :group 'p4)
 
-(defcustom p4passwd nil
+(defcustom p4-passwd nil
   "Password."
    :group 'p4)
 
-(defcustom p4client nil
+(defcustom p4-client nil
   "Client work space."
   :group 'p4)
 
-(defcustom p4host nil
+(defcustom p4-host nil
   "Host of p4 client."
   :group 'p4
   )
-(defcustom p4name nil
+(defcustom p4-name nil
   "Host of p4 client."
   :group 'p4)
 
-(defcustom p4port nil
+(defcustom p4-port nil
   "Host of p4 client."
   :group 'p4)
 
@@ -497,15 +497,16 @@ the last popped element to restore the window configuration."
 
 (defun p4-call-command-sync (&rest args)
   "Execute a command synchronously"
-  (with-current-buffer (get-buffer-create  "*P4-Progress*")
-    (display-buffer (get-buffer-create "*P4-Progress*"))
-    (goto-char (point-max))
-    (insert (format "\n-------------Executing sync Task: (p4 %s) -------------\n"
-                    (p4-concat-string-array args " ")))
-    (goto-char (point-max))
-    (insert (p4-command-output-to-string "p4" args))
-    (insert "\n-------------Finished sync Task -------------\n"))
-  )
+  (let ((result (p4-command-output-all "p4" args)))
+    (with-current-buffer (get-buffer-create  "*P4-Progress*")
+      (display-buffer (get-buffer-create "*P4-Progress*"))
+      (goto-char (point-max))
+      (insert (format "\n-------------Executing sync Task: (p4 %s) -------------\n"
+                      (p4-concat-string-array args " ")))
+      (goto-char (point-max))
+      (insert (cdr result))
+      (insert "\n-------------Finished sync Task -------------\n"))
+    (car result)))
 
 (defun p4-call-command-async (&rest args)
   "Execute a p4 command.
@@ -523,20 +524,26 @@ responsible for delete this buffer. Return that buffer."
         (setq output-buffer nil))
     output-buffer))
 
+(defun p4-command-output-all (cmd &rest args)
+  "Execute a p4 command and return result as string.
+args should be a list, but to make caller's life easier, it can accept one atom instead of a
+  list."
+  (let* ((ret nil)
+         (cmd-output (with-output-to-string
+                       (with-current-buffer standard-output
+                         (setq ret (apply #'process-file
+                                          cmd
+                                          nil (list t t) nil
+                                          (if (listp (car args))
+                                              (car args)
+                                            args)))))))
+    (cons ret (ansi-color-apply cmd-output))))
 
 (defun p4-command-output-to-string (cmd &rest args)
   "Execute a p4 command and return result as string.
 args should be a list, but to make caller's life easier, it can accept one atom instead of a
   list."
-  (let ((cmd-output (with-output-to-string
-                      (with-current-buffer standard-output
-                        (apply #'process-file
-                               cmd
-                               nil (list t t) nil
-                               (if (listp (car args))
-                                   (car args)
-                                 args))))))
-    (ansi-color-apply cmd-output)))
+  (cdr (p4-command-output-all cmd args)))
 
 (defalias 'command-output-to-string 'p4-command-output-to-string)
 
@@ -1005,35 +1012,35 @@ static char *abc[] = {
 
 (defun p4-init-variables ( )
   "Initialize user customized variables."
-  (if (or (not p4user)
-          ;; (not p4client)
-          (not p4passwd)
-          (and (not p4port)
-               (not p4name))) ;; todo: should provide a way to input passwd interactively.
+  (if (or (not p4-user)
+          ;; (not p4-client)
+          (not p4-passwd)
+          (and (not p4-port)
+               (not p4-name))) ;; todo: should provide a way to input passwd interactively.
       (error "User, Password, Client and host(or port) must be set! Customize them first."))
 
-  (setenv "P4USER" p4user)
-  (setenv "P4PASSWD" p4passwd)
+  (setenv "P4USER" p4-user)
+  (setenv "P4PASSWD" p4-passwd)
 
-  (if p4host
-      (setenv "P4HOST" p4host)
+  (if p4-host
+      (setenv "P4HOST" p4-host)
     )
 
-  (if p4client
+  (if p4-client
       (progn
-        (setenv "P4CLIENT" p4client)
-        (setq p4-current-client p4client))
+        (setenv "P4CLIENT" p4-client)
+        (setq p4-current-client p4-client))
 
     (setq p4-client-lists (p4-list-clients))
     (setq p4-current-client nil)
     (setenv "P4CLIENT" ""))
 
-  (if p4port
-      (setenv "P4PORT" p4port)
+  (if p4-port
+      (setenv "P4PORT" p4-port)
     )
 
-  (if p4name
-      (setenv "P4NAME" p4name)
+  (if p4-name
+      (setenv "P4NAME" p4-name)
     )
 
   ;; (p4-login)
@@ -1096,7 +1103,7 @@ static char *abc[] = {
 (defun p4-get-pending-cls ()
   "Get all pending change lists, returns (cons change_number description)"
   (let ((result-string (command-output-to-string "p4" "changes" "-s"  "pending"
-                                                 "-l" "-u" p4user "-c" p4client))
+                                                 "-l" "-u" p4-user "-c" p4-client))
         cls)
     (defun pending-cls-iter (pos)
       (let (res)
@@ -1282,7 +1289,7 @@ If reverAll is not provided, only revert files that are not changed."
     (funcall func "revert" "-c" cl
              (if (and revertAll
                       (yes-or-no-p "Going to abort all changes and revert all files, continue?"))
-                 (concat "//" p4client "/...")
+                 (concat "//" p4-client "/...")
                "-a"))))
 
 (defun p4-co-single-item-sync (item &optional changeList)
@@ -1456,7 +1463,7 @@ If reverAll is not provided, only revert files that are not changed."
   "Get description of cl based on current date and branch name"
   (format "Auto created by p4.el at: %s on branch: %s"
           (format-time-string "%Y-%m-%d")
-          (if p4client p4client "Unknown")))
+          (if p4-client p4-client "Unknown")))
 
 (defun p4-get-changeList (&optional description)
   "Create and return a new change list."
@@ -1530,7 +1537,7 @@ If reverAll is not provided, only revert files that are not changed."
 
 (defun p4-list-clients ()
   "Get a list of clients"
-  (let* ((out-string (if p4user (p4-command-output-to-string "p4" "clients" "-u" p4user )
+  (let* ((out-string (if p4-user (p4-command-output-to-string "p4" "clients" "-u" p4-user )
                        nil))
          (r-match-client (rx "Client"
                              (+ space) (group (+? nonl))
@@ -1560,25 +1567,25 @@ If reverAll is not provided, only revert files that are not changed."
   "Guess current workspace and set it to env"
   (let ((dirname (p4-denormalize-path
                   (file-truename (expand-file-name (if fn fn default-directory)))))
-        t-p4client t-p4-root )
+        t-p4-client t-p4-root )
     (when (or (not p4-current-client)
               (not p4-root))
       (catch 'fin
         (dolist (pair p4-client-lists)
           (when (string-prefix-p (cdr pair) dirname)
-            (setq t-p4client (car pair))
-            (setenv "P4CLIENT" t-p4client)
+            (setq t-p4-client (car pair))
+            (setenv "P4CLIENT" t-p4-client)
             (let ((p4info (command-output-to-string "p4"  "info")))
               (if (string-match p4-r-match-client-root p4info)
                   (setq t-p4-root (p4-normalize-path (match-string 1 p4info)))))
             (throw 'fin "finished.")))))
     ;; Final check
-    (if (and (not t-p4client) (not p4-current-client))
+    (if (and (not t-p4-client) (not p4-current-client))
         (error "Failed to guess workspace for path: %s.
 Is this directory under control of p4 ?" dirname)
-      (setq p4client (or t-p4client p4-current-client)
+      (setq p4-client (or t-p4-client p4-current-client)
             p4-root t-p4-root))
-    (setenv "P4CLIENT" p4client)))
+    (setenv "P4CLIENT" p4-client)))
 
 
 
@@ -1897,16 +1904,16 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
 (defp4cmd p4-login ()
   "login" "To login by obtaining a session ticket, type \\[p4-login].\n"
   (interactive)
-  (let (args (pwbuffer (get-buffer-create "*p4passwd*")))
+  (let (args (pwbuffer (get-buffer-create "*p4-passwd*")))
     (if current-prefix-arg
 	(setq args (p4-make-list-from-string
 		    (p4-read-arg-string "p4 login: "))))
-    (if (or (not p4passwd)
-            (eq 0 (length p4passwd)))
-	(setq p4passwd (read-passwd "Enter perforce password: ")))
+    (if (or (not p4-passwd)
+            (eq 0 (length p4-passwd)))
+	(setq p4-passwd (read-passwd "Enter perforce password: ")))
     (with-current-buffer pwbuffer
       (delete-region (point-min) (point-max))
-      (insert p4passwd)
+      (insert p4-passwd)
       (apply 'call-process-region (point-min) (point-max)
 	     (p4-get-executable) t t nil "login" args)
       (message "%s" (buffer-substring (point-min) (1- (point-max)))))))
@@ -1940,8 +1947,8 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
 
 (defun p4-discard-cl (cl)
   "Discard specified change list, it returns t if succeeded, or nil if failed."
-  (if (and (p4-is-cl-empty cl)
-           (= (p4-call-command-sync "change" "-d" cl) 0))
+  (when (and (p4-is-cl-empty cl)
+             (= (p4-call-command-sync "change" "-d" cl) 0))
       (let (index)
         (maphash (lambda (key val) (if (string= cl val) (setq index key)))
                  p4-changeList-table)
@@ -2005,8 +2012,8 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
   "Delete workspace"
   (interactive)
   (p4-guess-workspace)
-  (if p4client
-      (p4-call-command-sync "client" "-d" p4client))
+  (if p4-client
+      (p4-call-command-sync "client" "-d" p4-client))
   (error "Client not specified!")
   )
  ;; P4 Manager
@@ -2063,8 +2070,8 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
       (setq buffer-read-only nil)
       (erase-buffer)
       (insert (format "%s %s\n%s %s\n%s %s\n\n"
-                      p4-manager-prefix-user p4user
-                      p4-manager-prefix-client p4client
+                      p4-manager-prefix-user p4-user
+                      p4-manager-prefix-client p4-client
                       p4-manager-prefix-local p4-root))
       (insert "Change Lists:\n\n")
       (p4-buffer-set-face-property (format "^%s.*$" p4-manager-prefix-local) 'p4-root-dir-face)
@@ -4226,7 +4233,7 @@ file name selection.")
 
 ;; A function to get the current P4 client name
 (defun p4-get-client-name ()
-  "To get the current value of the environment variable P4CLIENT,
+  "To get the current value of the environment variable P4-CLIENT,
 type \\[p4-get-client-name].
 
 This will be the current client that is in use for access through

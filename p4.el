@@ -1,5 +1,4 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; p4.el --- Simple description
+;;; p4.el -- Brief introduction here.
 ;;
 ;; Copyright (C) 2011-2014, Yang, Ying-chao
 ;;
@@ -20,7 +19,7 @@
 ;; along with this program; if not, write to the Free Software
 ;; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ;;
-;; Commentary:
+;;; Commentary:
 ;;
 ;; Wrapper of P4 command line client.
 ;; Some variables should be set before using functions provided by
@@ -38,7 +37,7 @@
 ;;;; -*- emacs-lisp -*- -*- coding: utf-8; -*-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; $Id: p4.el, 04-16-2012
-
+;;; Code:
  ;; Initiate of this package.
 
 (require 'ansi-color)
@@ -235,20 +234,29 @@ for saved window configurations."
 
 ;;Private functions.
 
-(eval-and-compile
-  (defvar p4-include-help-to-command-docstring
-    (let (val)
-      (eval-when (compile) (setq val t))
-      val))
+;; (eval-and-compile
+;;   (defvar p4-include-help-to-command-docstring
+;;     (let (val)
+;;       (eval-when (compile) (setq val t))
+;;       val))
 
-  (defun p4-help-text (cmd text)
-    (concat text
-	    (with-temp-buffer
-	      (if (and p4-include-help-to-command-docstring
-		       (p4-get-executable)
-		       (zerop (call-process (p4-get-executable) nil t nil "help" cmd)))
-		  (buffer-substring (point-min) (point-max))
-		"")))))
+;;   (defun p4-help-text (cmd text)
+;;     (concat text
+;; 	    (with-temp-buffer
+;; 	      (if (and p4-include-help-to-command-docstring
+;; 		       (p4-get-executable)
+;; 		       (zerop (call-process (p4-get-executable) nil t nil "help" cmd)))
+;; 		  (buffer-substring (point-min) (point-max))
+;; 		"")))))
+(defvar p4-include-help-to-command-docstring)
+(defun p4-help-text (cmd text)
+  (concat text
+          (with-temp-buffer
+            (if (and p4-include-help-to-command-docstring
+                     (p4-get-executable)
+                     (zerop (call-process (p4-get-executable) nil t nil "help" cmd)))
+                (buffer-substring (point-min) (point-max))
+              ""))))
 
 (defun p4-concat-string-array (array &optional sep)
   "Concat string array"

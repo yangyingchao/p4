@@ -34,10 +34,8 @@
 ;; Lots of code is merged from https://github.com/fujii/p4el
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;; -*- emacs-lisp -*- -*- coding: utf-8; -*-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; $Id: p4.el, 04-16-2012
 ;;; Code:
+
  ;; Initiate of this package.
 
 (require 'ansi-color)
@@ -342,8 +340,7 @@ for saved window configurations."
 ;; Scan specified region for references to change numbers
 ;; and make the change numbers clickable.
 (defun p4-find-change-numbers (buffer start end)
-  (save-excursion
-    (set-buffer buffer)
+  (with-current-buffer buffer
     (goto-char start)
     (while (re-search-forward "\\(changes?\\|submit\\|p4\\)[:#]?[ \t\n]+" end t)
       (while (looking-at
@@ -4374,5 +4371,10 @@ that."
 ;;           (cons "C" 'p4-cbg))
 ;;          magit-status-mode-map))))
 
+;; Local Variables:
+;; coding: utf-8
+;; indent-tabs-mode: nil
+;; End:
+
 (provide 'p4)
-;;;;; p4.el ends here
+;;; p4.el ends here

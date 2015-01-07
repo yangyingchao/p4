@@ -246,7 +246,7 @@ for saved window configurations."
 ;; 		       (zerop (call-process (p4-get-executable) nil t nil "help" cmd)))
 ;; 		  (buffer-substring (point-min) (point-max))
 ;; 		"")))))
-(defvar p4-include-help-to-command-docstring)
+(defvar p4-include-help-to-command-docstring "")
 (defun p4-help-text (cmd text)
   (concat text
           (with-temp-buffer

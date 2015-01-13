@@ -1522,7 +1522,7 @@ If reverAll is not provided, only revert files that are not changed."
                (= (aref src ep) 10)
                (= (aref src ep) 32))
       (setq ep (1- ep)))
-    (substring src sp ep)))
+    (substring src sp (1+ ep))))
 
 (defun p4-get-git-commit ()
   "Get git commit"

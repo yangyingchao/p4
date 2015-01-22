@@ -247,6 +247,21 @@ for saved window configurations."
 ;; 		  (buffer-substring (point-min) (point-max))
 ;; 		"")))))
 (defvar p4-include-help-to-command-docstring "")
+
+(defun p4-strip-string (src &optional trails &optional head)
+  "Strip tailing and leading(optional) trails from src"
+  (if (not trails)
+      (setq trails (rx whitespace)))
+  (if (not (stringp src))
+      (error "Source is not a string!"))
+  (if (string-match
+       (if head
+           (format "^%s*\\(.*+?\\)%s*$" trails trails)
+         (format "\\(.*+?\\)%s*$" trails))
+       src)
+      (match-string 1 src)
+    src))
+
 (defun p4-help-text (cmd text)
   (concat text
           (with-temp-buffer
@@ -1075,7 +1090,7 @@ static char *abc[] = {
       (setq outpaths (if (string-match (rx bol "//depot/") paths)
                          paths
                        (let ((shortpath (get-short-path paths)))
-                         (yc/strip-string (if shortpath
+                         (p4-strip-string (if shortpath
                                               (concat "//depot" (p4-normalize-path shortpath))
                                             paths))))))
     outpaths))
@@ -1265,7 +1280,7 @@ static char *abc[] = {
   (if (and rev (not (stringp rev)))
       (error "Rev should be a string or nil!"))
 
-  (let ((final-path (yc/strip-string item "/"))
+  (let ((final-path (p4-strip-string item "/"))
         (format-func (if (file-exists-p item)
              'p4-make-local-path
            'p4-make-depot-path)))
@@ -1302,9 +1317,9 @@ If reverAll is not provided, only revert files that are not changed."
   (let ((final-path item))
     (if (file-exists-p item)
         (if (file-directory-p item)
-            (setq final-path (concat (yc/strip-string item "/") "/...")))
+            (setq final-path (concat (p4-strip-string item "/") "/...")))
       (if (p4-file-directory-p item)
-          (setq final-path (concat (yc/strip-string item "/") "/..."))))
+          (setq final-path (concat (p4-strip-string item "/") "/..."))))
 
     (setq final-path (p4-make-depot-path  final-path))
     (p4-call-command-sync "edit" "-c" (if changeList changeList "default") final-path )))
@@ -1314,9 +1329,9 @@ If reverAll is not provided, only revert files that are not changed."
   (let ((final-path item))
     (if (file-exists-p item)
         (if (file-directory-p item)
-            (setq final-path (concat (yc/strip-string item "/") "/...")))
+            (setq final-path (concat (p4-strip-string item "/") "/...")))
       (if (p4-file-directory-p item)
-          (setq final-path (concat (yc/strip-string item "/") "/..."))))
+          (setq final-path (concat (p4-strip-string item "/") "/..."))))
 
     (setq final-path (p4-make-depot-path  final-path))
     (p4-call-command-async "edit" "-c" (if changeList changeList "default") final-path )))

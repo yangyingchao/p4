@@ -2050,7 +2050,7 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
     (define-key map (kbd "2") (lambda () (interactive) (p4-manager-show-all-change-lists nil)))
     (define-key map (kbd "g") 'p4-manager-refresh)
     (define-key map (kbd "L") 'p4-cleanup-cls)
-    (define-key map (kbd "C") 'p4-manager-submit-cl)
+    (define-key map (kbd "S") 'p4-manager-submit-cl)
     (define-key map (kbd "k") 'p4-manager-discard-cl)
     (define-key map (kbd "v") (lambda() (interactive) (p4-manager-revert-file)))
     (define-key map (kbd "U") (lambda() (interactive) (p4-manager-revert-file t)))

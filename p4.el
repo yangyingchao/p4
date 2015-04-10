@@ -1,4 +1,4 @@
-;;; p4.el -- Brief introduction here.
+;;; p4.el -- p4 integration with Emacs.
 ;;
 ;; Copyright (C) 2011-2014, Yang, Ying-chao
 ;;
@@ -96,6 +96,9 @@ Example: (rx (or \"main\" (: \"feature_\" (= 6 digit))))"
 
 (defvar p4-current-client nil
   "current client,  set to nil to make it change automatically with current directory")
+
+;;;###autoload
+(defvar p4-version 0.2 "version of this p4 file")
 
 ;; TODO: Hide following consts using (let ...)
 (defconst p4-r-match-client-name
@@ -232,20 +235,6 @@ for saved window configurations."
 
 ;;Private functions.
 
-;; (eval-and-compile
-;;   (defvar p4-include-help-to-command-docstring
-;;     (let (val)
-;;       (eval-when (compile) (setq val t))
-;;       val))
-
-;;   (defun p4-help-text (cmd text)
-;;     (concat text
-;; 	    (with-temp-buffer
-;; 	      (if (and p4-include-help-to-command-docstring
-;; 		       (p4-get-executable)
-;; 		       (zerop (call-process (p4-get-executable) nil t nil "help" cmd)))
-;; 		  (buffer-substring (point-min) (point-max))
-;; 		"")))))
 (defvar p4-include-help-to-command-docstring "")
 
 (defun p4-strip-string (src &optional trails &optional head)
